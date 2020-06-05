@@ -151,10 +151,13 @@ for layer in model.layers:
 model.fit(trainX, trainY, validation_split=1 - porcentajePrueba, epochs=10, batch_size=numPruebas)
 score = model.evaluate(testX, testY, verbose=0)
 
-converter = tf.lite.TFLiteConverter.from_saved_model(model)
-converter.optimizations = [tf.lite.Optimize.DEFAULT]
-quantized_model = converter.convert()
-open("converted_model.tflite", "wb").write(quantized_model)
+# Convert the model.
+converter = tf.lite.TFLiteConverter.from_keras_model(model)
+tflite_model = converter.convert()
+
+# Save the TF Lite model.
+with tf.io.gfile.GFile('model.tflite', 'wb') as f:
+  f.write(tflite_model)
 
 # Convert Keras model to TF Lite format.
 converter = tf.lite.TFLiteConverter.from_keras_model(model)
