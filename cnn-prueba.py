@@ -116,77 +116,24 @@ trainSplit = np.random.rand(len(segmentosNuevos)) < porcentajePrueba
 trainX = segmentosNuevos[trainSplit]
 testX = segmentosNuevos[~trainSplit]
 trainX = np.nan_to_num(trainX)
+prueba = trainX.shape[0:3]
 testX = np.nan_to_num(testX)
 trainY = etiquetas[trainSplit]
 testY = etiquetas[~trainSplit]
 
-# Definimos el modelo
-model = Sequential()
-# Agregamos la primera capa convolucionial con 32 filtros y tamaño kernel de 5 por 5, utilizando el rectificador
-# como funcion de activacion
-model.add(
-    Conv2D(numFiltros, (kernelSize1, kernelSize1), input_shape=(numFilas, numColumnas, 1), activation='relu'))
-# Agregamos una capa de MaxPooling
-model.add(MaxPooling2D(pool_size=(ventanaAgru, ventanaAgru), padding='valid'))
-# Agregamos una capa de abandono para la regularizacion y evitar el ajuste excesivo
-model.add(Dropout(poncentajeAbandono))
-# Aplanamos la salida
-model.add(Flatten())
-# Agregamos la primera capa totalmente conectada con 256 salidas
-model.add(Dense(numNeuronasFCL1, activation='relu'))
-# Agregamos la segunda capa de 128 salidas toralmenre conectadas
-model.add(Dense(numNeuronasFCL2, activation='relu'))
-# Agregamos la capa softmax para la clasificacion
-model.add(Dense(numClases, activation='softmax'))
+model_m = tf.keras.models.Sequential()
+model_m.add(tf.keras.layers.InputLayer(input_shape=(numFilas,numColumnas)))
+model_m.add(tf.keras.layers.Reshape(target_shape=(numFilas,numColumnas,1)))
+model_m.add(tf.keras.layers.Dense(100, activation='relu'))
+model_m.add(tf.keras.layers.Dense(100, activation='relu'))
 
-print(model.summary())
-#------------------------------------------ Ajustamos el Modelo CNN  ------------------------------------------
+model_m.add(tf.keras.layers.Dense(100, activation='relu'))
+model_m.add(tf.keras.layers.Flatten())
+model_m.add(tf.keras.layers.Dense(numClases, activation='softmax'))
+print(model_m.summary())
 
-# Compilamos el modelo para generar un modelo
 adam = optimizers.Adam(lr=0.001, decay=1e-6)
-model.compile(loss='categorical_crossentropy', optimizer=adam, metrics=['accuracy'])
+model_m.compile(loss='categorical_crossentropy', optimizer=adam, metrics=['accuracy'])
 
-for layer in model.layers:
-    print(layer.name)
-
-model.fit(trainX, trainY, validation_split=1 - porcentajePrueba, epochs=10, batch_size=numPruebas)
-score = model.evaluate(testX, testY, verbose=0)
-
-# Convert the model.
-converter = tf.lite.TFLiteConverter.from_keras_model(model)
-tflite_model = converter.convert()
-
-# Save the TF Lite model.
-with tf.io.gfile.GFile('model.tflite', 'wb') as f:
-  f.write(tflite_model)
-
-# Create a converter
-converter = tf.lite.TFLiteConverter.from_keras_model(model)
-# Convert the model
-tflite_model = converter.convert()
-# Create the tflite model file
-tflite_model_name = "mymodel.tflite"
-open(tflite_model_name, "wb").write(tflite_model)
-
-# Convert Keras model to TF Lite format.
-converter = tf.lite.TFLiteConverter.from_keras_model(model)
-tflite_float_model = converter.convert()
-
-# Show model size in KBs.
-float_model_size = len(tflite_float_model) / 1024
-print('Float model size = %dKBs.' % float_model_size)
-
-# Re-convert the model to TF Lite using quantization.
-converter.optimizations = [tf.lite.Optimize.DEFAULT]
-tflite_quantized_model = converter.convert()
-
-# Show model size in KBs.
-quantized_model_size = len(tflite_quantized_model) / 1024
-print('Quantized model size = %dKBs,' % quantized_model_size)
-print('which is about %d%% of the float model size.'\
-      % (quantized_model_size * 100 / float_model_size))
-
-# Save the quantized model to file to the Downloads directory
-f = open('recoact.tflite', "wb")
-f.write(tflite_quantized_model)
-f.close()
+model_m.fit(trainX, trainY, validation_split=1 - porcentajePrueba, epochs=10, batch_size=numPruebas)
+score = model_m.evaluate(testX[1:3], testY, verbose=0)

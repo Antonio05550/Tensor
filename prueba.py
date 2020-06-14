@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from scipy import stats
-from IPython.display import display, HTML
 
 from sklearn import metrics
 from sklearn.metrics import classification_report
@@ -150,7 +149,7 @@ num_time_periods, num_sensors = x_train.shape[1], x_train.shape[2]
 num_classes = le.classes_.size
 print(list(le.classes_))
 
-input_shape = (num_time_periods * num_sensors)
+input_shape = (num_time_periods, num_sensors)
 x_train = x_train.reshape(x_train.shape[0], input_shape)
 print('x_train shape:', x_train.shape)
 print('input_shape:', input_shape)
